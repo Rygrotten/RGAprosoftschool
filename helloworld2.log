@@ -1,4 +1,0 @@
-execve("./helloworld2", ["./helloworld2"], 0x7fffbd4e3a40 /* 40 vars */) = 0
-write(1, "Hello world!\n", 13)          = 13
-exit(1)                                 = ?
-+++ exited with 1 +++
