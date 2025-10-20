@@ -1,0 +1,2 @@
+write(1, "Hello world!\n", 13)          = 13
++++ exited with 1 +++
