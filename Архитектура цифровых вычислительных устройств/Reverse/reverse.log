@@ -1,0 +1,9 @@
+execve("./reverse", ["./reverse"], 0x7ffc670b76f0 /* 40 vars */) = 0
+write(1, "Enter your string:", 18)      = 18
+write(1, "\n", 1)                       = 1
+read(0, "Pablo\n", 100)                 = 6
+write(1, "Reversed:", 9)                = 9
+write(1, "\nolbaP", 6)                  = 6
+write(1, "\n", 1)                       = 1
+exit(0)                                 = ?
++++ exited with 0 +++

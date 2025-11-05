@@ -1,0 +1,123 @@
+     1                                  section .data
+     2 00000000 456E74657220796F75-         prompt db 'Enter your string:', 0
+     2 00000009 7220737472696E673A-
+     2 00000012 00                 
+     3 00000013 52657665727365643A-         reversed_msg db 'Reversed:', 0
+     3 0000001C 00                 
+     4 0000001D 0A                          newline db 10
+     5                                  
+     6                                  section .bss
+     7 00000000 <res 65h>                   buffer resb 101
+     8 00000065 ??                          input_len resb 1
+     9                                  
+    10                                  section .text
+    11                                      global _start
+    12                                  
+    13                                  _start:
+    14 00000000 48BE-                       mov rsi, prompt	;Вывод  Enter your string
+    14 00000002 [0000000000000000] 
+    15 0000000A E886000000                  call print_string
+    16 0000000F E8A3000000                  call print_newline
+    17                                  
+    18 00000014 48BE-                       mov rsi, buffer	;Чтение строки
+    18 00000016 [0000000000000000] 
+    19 0000001E 48BF-                       mov rdi, input_len
+    19 00000020 [6500000000000000] 
+    20 00000028 E8AB000000                  call read_string
+    21                                  
+    22 0000002D 803C25[65000000]00          cmp byte [input_len], 0	;Проверка на пустую строку
+    22          ******************       warning: implicit DEFAULT ABS is deprecated [-w+implicit-abs-deprecated]
+    23 00000035 7454                        je exit
+    24                                  
+    25 00000037 48BE-                       mov rsi, buffer		;Разворот строки
+    25 00000039 [0000000000000000] 
+    26 00000041 408A3C25[65000000]          mov dil, byte [input_len]
+    27 00000049 E8AF000000                  call reverse_string
+    28                                  
+    29 0000004E 48BE-                       mov rsi, reversed_msg	;Вывод результата
+    29 00000050 [1300000000000000] 
+    30 00000058 E838000000                  call print_string
+    31                                  
+    32 0000005D 48BE-                       mov rsi, buffer
+    32 0000005F [0000000000000000] 
+    33 00000067 480FB61425-                 movzx rdx, byte [input_len]
+    33 0000006C [65000000]         
+    34 00000070 E8AF000000                  call print_buffer
+    35 00000075 E811000000                  call exit
+    36                                  
+    37                                  check_syscall:
+    38 0000007A 4883F800                    cmp rax, 0
+    39 0000007E 7D0A                        jge .ok
+    40 00000080 4889C7                      mov rdi, rax
+    41 00000083 B83C000000                  mov rax, 60
+    42 00000088 0F05                        syscall
+    43                                  .ok:
+    44 0000008A C3                          ret
+    45                                  
+    46                                  exit:			;Успешное завершение программы
+    47 0000008B B83C000000                  mov rax, 60   
+    48 00000090 4831FF                      xor rdi, rdi
+    49 00000093 0F05                        syscall
+    50                                  
+    51                                  print_string: 
+    52 00000095 BA00000000                  mov rdx, 0
+    53                                  .count_loop:
+    54 0000009A 803C1600                    cmp byte [rsi + rdx], 0
+    55 0000009E 7405                        je .print
+    56 000000A0 48FFC2                      inc rdx
+    57 000000A3 EBF5                        jmp .count_loop
+    58                                  .print:
+    59 000000A5 B801000000                  mov rax, 1
+    60 000000AA BF01000000                  mov rdi, 1
+    61 000000AF 0F05                        syscall
+    62 000000B1 E8C4FFFFFF                  call check_syscall
+    63 000000B6 C3                          ret
+    64                                  
+    65                                  print_newline:	
+    66 000000B7 B801000000                  mov rax, 1
+    67 000000BC BF01000000                  mov rdi, 1
+    68 000000C1 48BE-                       mov rsi, newline
+    68 000000C3 [1D00000000000000] 
+    69 000000CB BA01000000                  mov rdx, 1
+    70 000000D0 0F05                        syscall
+    71 000000D2 E8A3FFFFFF                  call check_syscall
+    72 000000D7 C3                          ret
+    73                                  
+    74                                  read_string:	
+    75 000000D8 BA64000000                  mov rdx, 100    ; Максимальная длина
+    76 000000DD B800000000                  mov rax, 0      ; read
+    77 000000E2 BF00000000                  mov rdi, 0      ; stdin
+    78 000000E7 0F05                        syscall
+    79 000000E9 E88CFFFFFF                  call check_syscall
+    80                                  
+    81 000000EE 880425[65000000]            mov [input_len], al	; Сохранение длины и добавление нулевого байта
+    82 000000F5 C680[00000000]00            mov byte [buffer + rax], 0
+    83 000000FC C3                          ret
+    84                                  
+    85                                  reverse_string:
+    86 000000FD 4084FF                      test dil, dil    ; Проверка пустой строки
+    87 00000100 7421                        jz .end
+    88 00000102 4889F2                      mov rdx, rsi     ; Сохранение начала буфера
+    89 00000105 480FB6CF                    movzx rcx, dil   ; Длина строки
+    90 00000109 488D740EFF                  lea rsi, [rsi + rcx - 1]  ; Указатель на конец строки
+    91                                  
+    92                                  .reverse_loop:
+    93 0000010E 4839F2                      cmp rdx, rsi
+    94 00000111 7D10                        jge .end
+    95 00000113 8A02                        mov al, [rdx]
+    96 00000115 8A26                        mov ah, [rsi]
+    97 00000117 8806                        mov [rsi], al
+    98 00000119 8822                        mov [rdx], ah
+    99 0000011B 48FFC2                      inc rdx
+   100 0000011E 48FFCE                      dec rsi
+   101 00000121 EBEB                        jmp .reverse_loop
+   102                                  
+   103                                  .end:
+   104 00000123 C3                          ret
+   105                                  
+   106                                  print_buffer:
+   107 00000124 B801000000                  mov rax, 1
+   108 00000129 BF01000000                  mov rdi, 1
+   109 0000012E 0F05                        syscall
+   110 00000130 E882FFFFFF                  call  print_newline
+   111 00000135 C3                          ret
