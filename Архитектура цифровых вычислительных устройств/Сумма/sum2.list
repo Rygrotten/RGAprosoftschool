@@ -1,0 +1,186 @@
+     1                                  section .data
+     2 00000000 456E7465722031206E-         msg1    db 'Enter 1 number: '	;Сообщение для первого числа
+     2 00000009 756D6265723A20     
+     3                                      len1    equ $ - msg1
+     4 00000010 456E7465722032206E-         msg2    db 'Enter 2 number: '	;Сообщение для второго числа
+     4 00000019 756D6265723A20     
+     5                                      len2    equ $ - msg2
+     6 00000020 416E737765723A20            msg3    db 'Answer: '		;Сообщение для ответа
+     7                                      len3    equ $ - msg3
+     8 00000028 0A                          newline db 10			
+     9                                  
+    10                                  section .bss
+    11 00000000 <res 10h>                   buffer1 resb 16
+    12 00000010 <res 10h>                   buffer2 resb 16
+    13 00000020 <res 10h>                   result  resb 16
+    14 00000030 ????????????????            num1    resq 1
+    15 00000038 ????????????????            num2    resq 1
+    16 00000040 <res 10h>                   res_str resb 16
+    17 00000050 ????????????????            res_len resq 1
+    18                                  
+    19                                  section .text
+    20                                      global _start
+    21                                  
+    22                                  _start:
+    23 00000000 48BE-                       mov rsi, msg1	;Ввод первого числа
+    23 00000002 [0000000000000000] 
+    24 0000000A BA10000000                  mov rdx, len1	
+    25 0000000F E8CB000000                  call print_string
+    26                                      
+    27 00000014 48BE-                       mov rsi, buffer1	
+    27 00000016 [0000000000000000] 
+    28 0000001E BA10000000                  mov rdx, 16
+    29 00000023 E8C9000000                  call read_string
+    30 00000028 E8D6000000                  call string_to_int
+    31 0000002D 48890425[30000000]          mov [num1], rax
+    31          ******************       warning: implicit DEFAULT ABS is deprecated [-w+implicit-abs-deprecated]
+    32                                  
+    33 00000035 48BE-                       mov rsi, msg2	;Ввод второго числа
+    33 00000037 [1000000000000000] 
+    34 0000003F BA10000000                  mov rdx, len2
+    35 00000044 E896000000                  call print_string
+    36                                      
+    37 00000049 48BE-                       mov rsi, buffer2
+    37 0000004B [1000000000000000] 
+    38 00000053 BA10000000                  mov rdx, 16
+    39 00000058 E894000000                  call read_string
+    40 0000005D E8A1000000                  call string_to_int
+    41 00000062 48890425[38000000]          mov [num2], rax
+    42                                  
+    43 0000006A 488B0425[30000000]          mov rax, [num1]	;Сложение чисел
+    44 00000072 488B1C25[38000000]          mov rbx, [num2]
+    45 0000007A E838010000                  call add_numbers
+    46                                      
+    47 0000007F E8B4000000                  call int_to_string
+    48                                      
+    49 00000084 48BE-                       mov rsi, msg3	;Вывод результата
+    49 00000086 [2000000000000000] 
+    50 0000008E BA08000000                  mov rdx, len3
+    51 00000093 E847000000                  call print_string
+    52                                      
+    53 00000098 48BE-                       mov rsi, res_str
+    53 0000009A [4000000000000000] 
+    54 000000A2 488B1425[50000000]          mov rdx, [res_len]
+    55 000000AA E830000000                  call print_string
+    56                                      
+    57 000000AF 48BE-                       mov rsi, newline
+    57 000000B1 [2800000000000000] 
+    58 000000B9 BA01000000                  mov rdx, 1
+    59 000000BE E81C000000                  call print_string
+    60                                      
+    61 000000C3 B83C000000                  mov rax, 60		;Выход без ошибки
+    62 000000C8 4883F700                    xor rdi, 0 
+    63 000000CC 0F05                        syscall
+    64                                  
+    65                                  check_syscall:		;Подпрограмма проверки системного вызова
+    66 000000CE 4883F800                    cmp rax, 0
+    67 000000D2 7D0A                        jge .ok
+    68 000000D4 4889C7                      mov rdi, rax
+    69 000000D7 B83C000000                  mov rax, 60
+    70 000000DC 0F05                        syscall
+    71                                  .ok:
+    72 000000DE C3                          ret
+    73                                  
+    74                                  print_string:		;Вывод строки
+    75 000000DF B801000000                  mov rax, 1
+    76 000000E4 BF01000000                  mov rdi, 1
+    77 000000E9 0F05                        syscall
+    78 000000EB E8DEFFFFFF                  call check_syscall
+    79 000000F0 C3                          ret
+    80                                  
+    81                                  read_string:		;Чтение строки
+    82 000000F1 B800000000                  mov rax, 0
+    83 000000F6 BF00000000                  mov rdi, 0
+    84 000000FB 0F05                        syscall
+    85 000000FD E8CCFFFFFF                  call check_syscall
+    86 00000102 C3                          ret
+    87                                  
+    88                                  string_to_int:
+    89 00000103 4831C0                      xor rax, rax	;Обнуляем регистр, в котором будет хранится число
+    90 00000106 4831C9                      xor rcx, rcx	;Удаляем информацию о знаке
+    91 00000109 8A1E                        mov bl, [rsi]	;Проверка первого символа строки на минус
+    92 0000010B 80FB2D                      cmp bl, '-'
+    93 0000010E 7506                        jne .convert	;Если не минус - перевод
+    94 00000110 48FFC6                      inc rsi		;Пропускаем минус
+    95 00000113 48FFC1                      inc rcx		;Ставим отрицательный флаг
+    96                                  
+    97                                  .convert:
+    98 00000116 480FB616                    movzx rdx, byte [rsi];Текущий символ
+    99 0000011A 80FA0A                      cmp dl, 10		;Проверка на конец строки
+   100 0000011D 7410                        je .done
+   101 0000011F 486BC00A                    imul rax, 10	;Умножаем число на 10
+   102 00000123 4883EA30                    sub rdx, '0'
+   103 00000127 4801D0                      add rax, rdx	;Добавляем цифру к числу
+   104 0000012A 48FFC6                      inc rsi		;Переход к следующему символу
+   105 0000012D EBE7                        jmp .convert
+   106                                  
+   107                                  .done:
+   108 0000012F 4885C9                      test rcx, rcx	;Проверка на знак
+   109 00000132 7403                        jz .positive
+   110 00000134 48F7D8                      neg rax
+   111                                  
+   112                                  .positive:
+   113 00000137 C3                          ret
+   114                                  
+   115                                  int_to_string:
+   116 00000138 48BF-                       mov rdi, res_str	;Начало буфера
+   116 0000013A [4000000000000000] 
+   117 00000142 C60700                      mov byte [rdi], 0	
+   118 00000145 BB0A000000                  mov rbx, 10		;Делитель
+   119                                      
+   120 0000014A 85C0                        test eax, eax	;Проверка знака
+   121 0000014C 7909                        jns .positive
+   122 0000014E 48F7D8                      neg rax		;Обрабатываем отрицательность
+   123 00000151 C6072D                      mov byte [rdi], '-'
+   124 00000154 48FFC7                      inc rdi
+   125                                  
+   126                                  .positive:
+   127 00000157 4989F8                      mov r8, rdi		;Сохраняем начало строки
+   128                                      
+   129                                  .convert_loop:
+   130 0000015A 4831D2                      xor rdx, rdx	;Освобождаем rdx
+   131 0000015D 48F7F3                      div rbx		;rbx - частное, rdx - остаток
+   132 00000160 80C230                      add dl, '0'		;Цифра в символ
+   133 00000163 8817                        mov [rdi], dl	;добавляем символ в строку
+   134 00000165 48FFC7                      inc rdi
+   135 00000168 4885C0                      test rax, rax	;Проверяем число
+   136 0000016B 75ED                        jnz .convert_loop
+   137                                      
+   138 0000016D C60700                      mov byte [rdi], 0	;Завершаем строку
+   139                                      
+   140 00000170 4C89C6                      mov rsi, r8		;Переворачиваем строку
+   141 00000173 4889F9                      mov rcx, rdi
+   142 00000176 4829F1                      sub rcx, rsi
+   143 00000179 48FFCF                      dec rdi
+   144                                      
+   145                                  .reverse:
+   146 0000017C 4839FE                      cmp rsi, rdi
+   147 0000017F 7D10                        jge .reverse_done
+   148 00000181 8A06                        mov al, [rsi]
+   149 00000183 8A1F                        mov bl, [rdi]
+   150 00000185 881E                        mov [rsi], bl
+   151 00000187 8807                        mov [rdi], al
+   152 00000189 48FFC6                      inc rsi
+   153 0000018C 48FFCF                      dec rdi
+   154 0000018F EBEB                        jmp .reverse
+   155                                  
+   156                                  .reverse_done:
+   157 00000191 48BF-                       mov rdi, res_str	;Вычисляем длину
+   157 00000193 [4000000000000000] 
+   158 0000019B E808000000                  call string_length
+   159 000001A0 890425[50000000]            mov [res_len], eax
+   160 000001A7 C3                          ret
+   161                                  
+   162                                  string_length:
+   163 000001A8 4831C0                      xor rax, rax		;Обнуление счётчика длины
+   164                                  .loop:
+   165 000001AB 803C0700                    cmp byte [rdi + rax], 0	;Проверка на конец строки
+   166 000001AF 7405                        je .done			
+   167 000001B1 48FFC0                      inc rax			;Увеличение счётчика
+   168 000001B4 EBF5                        jmp .loop
+   169                                  .done:
+   170 000001B6 C3                          ret
+   171                                  
+   172                                  add_numbers:
+   173 000001B7 4801D8                      add rax, rbx
+   174 000001BA C3                          ret
